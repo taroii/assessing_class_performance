@@ -1,2 +1,2 @@
-# assessing_class_performance
+# Assessing Class Performance
 UCLA STATS 101A Winter 2023 Group Project
