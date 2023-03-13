@@ -18,14 +18,13 @@ The goal of this project is to understand what factors affect college students' 
 ## Reading in data
 library(tidyverse)
 data <- read.csv("diversity-2.csv", stringsAsFactors=T)
+data <- data %>% select(-c(apo, imccg, pg, RSO, SFS))
 
 ## Shape of our data
 data %>% dim()
 
 ## Types of variables
 variable_types <- sapply(data, class)
-convert_name <- c(character = "Categorical", numeric = "Quantitative")
-variable_types <- convert_name[variable_types]
 variable_types %>% table()
 ```
 
@@ -56,11 +55,13 @@ data <- data %>%
   na.omit()
 
 sapply(data, function(x) sum(is.na(x)))
+
+head(data)
 ```
 
 #### Visualizing Relationships between Suspect Factors and GPA
 
-Before any data preprocessing or modeling, we suspected a few variables to be associated with GPA based on our intuition. These variables were gender, discrimination, relationship status, and ethnicity. 
+Before any data preprocessing or modeling, we suspected a few variables to be associated with GPA based on our intuition. These variables were gender, relationship status, and ethnicity. 
 
 ```{r}
 ## GPA vs Gender
@@ -79,8 +80,8 @@ data$gender <- gender_categories[as.character(data$gender)]
 
 data %>% 
   group_by(gender) %>% 
-  mutate(Count_per_Gender = n()) %>%
-  ggplot(aes(x=gender, y=gpa)) + geom_boxplot(aes(fill=Count_per_Gender)) + theme_bw()
+  mutate(CountPerGender = n()) %>%
+  ggplot(aes(x=gender, y=gpa)) + geom_boxplot(aes(fill=CountPerGender)) + theme_bw()
 ```
 
 Here we can see that while the the median GPAs for female, male, and queer identifying students are relatively similar, we find that transgender students have a much higher median GPA than the other students. That being said, there aren't that many transgender students in our data, so it may not be representative for all transgender students.
@@ -111,8 +112,8 @@ data$relationship <- relationship_categories[as.character(data$relationship)]
 
 data %>% 
   group_by(relationship) %>% 
-  mutate(Count_Per_Relationship = n()) %>% 
-  ggplot(aes(relationship, gpa, fill=Count_Per_Relationship)) +
+  mutate(CountPerRelationship = n()) %>% 
+  ggplot(aes(relationship, gpa, fill=CountPerRelationship)) +
   geom_boxplot() +
   #coord_flip() +
   theme_bw()
@@ -128,6 +129,39 @@ data %>%
 ```
 
 While Single and Relationship students show similar bimodal distributions, married students show a more normal distribution. In this context, it means that while a lot of married students have a GPA around 3.0, there isn't a peak around 4.0, indicating that married students may prioritize having perfect GPAs less than non-married students.
+
+```{r}
+## Ethnicity
+
+data$ethnicity %>% levels()
+
+data %>% 
+  group_by(ethnicity) %>% 
+  mutate(CountPerEthnicity = n()) %>% 
+  ggplot(aes(ethnicity, gpa, fill=CountPerEthnicity)) +
+  geom_boxplot() +
+  #coord_flip() +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+```
+
+```{r}
+data %>% 
+  ggplot(aes(x = gpa, fill=ethnicity)) +
+  geom_density(alpha = 0.5) + 
+  theme_bw()
+```
+
+```{r}
+#GPA 
+
+ggplot(data=data, aes(x=gpa)) + 
+  geom_density(fill="green", alpha=0.5) + 
+  theme_bw()
+```
+
+
+
 
 #### Evaluation of Visualizations
 
@@ -159,6 +193,20 @@ yhat_selected <- predict(selected_lm, selected_test)
 
 selected_MSE <- mean((yhat_selected - selected_test$gpa)^2)
 selected_MSE
+
+par(mfrow=c(2, 2))
+plot(selected_lm)
+
+selected_data %>% head()
+
+#variance inflation factor
+library(car)
+selected_vif <- vif(selected_lm)
+sum(selected_vif[,1] >= 5)
+
+
+#anova
+anova(selected_lm)
 ```
 
 #### All Variables  
@@ -177,6 +225,11 @@ yhat_all <- predict(all_lm, test_data)
 
 all_MSE <- mean((yhat_all - test_data$gpa)^2)
 all_MSE
+
+par(mfrow=c(2, 2))
+plot(all_lm)
+
+ncol(data)
 ```
 
 \pagebreak
@@ -187,7 +240,7 @@ Before selecting features, we can manually change categorical data to numeric da
 
 ```{r}
 ## Create dummy variables for Course
-data$Course %>% levels()
+#data$Course %>% levels()
 
 data <- data %>% 
   mutate(stats10 = ifelse(Course == "stats10", 1, 0),
@@ -198,7 +251,7 @@ data <- data %>%
   select(-Course)
 
 ## Convert Year to Numeric Values
-data$year %>% levels()
+#data$year %>% levels()
 
 year_to_num <- c("Freshman" = 1,
                  "Sophomore" = 2,
@@ -209,7 +262,7 @@ year_to_num <- c("Freshman" = 1,
 data$year <- year_to_num[as.character(data$year)]
 
 ## Convert Enrollment to dummy variables
-data$enrollment %>% levels()
+#data$enrollment %>% levels()
 
 data <- data %>% 
   mutate(inState = ifelse(enrollment == "In state", 1, 0),
@@ -217,21 +270,21 @@ data <- data %>%
   select(-enrollment)
 
 ## Convert Status
-data$status %>% levels()
+#data$status %>% levels()
 
 data <- data %>% 
   mutate(fullTime = ifelse(status == "Full-time", 1, 0)) %>% 
   select(-status)
   
 ## Convert Language
-data$language %>% levels()
+#data$language %>% levels()
 
 data <- data %>% 
   mutate(multilingual = ifelse(language == "English only", 0, 1)) %>% 
   select(-language)
 
 ## Convert Discipline
-data$discipline %>% levels()
+#data$discipline %>% levels()
 
 stem_disciplines <- c("Engineering and computer science", "Mathematics", "sciene related")
 humanities_disciplines <- c("Art and architecture", "Social science", "Linguistics")
@@ -246,14 +299,14 @@ data <- data %>%
   select(-discipline)
 
 ## Convert Campus
-data$campus %>% levels()
+#data$campus %>% levels()
 
 data <- data %>% 
   mutate(northCampus = ifelse(campus == "north", 1, 0)) %>% 
   select(-campus)
 
 ## Convert Relationship
-data$relationship %>% unique()
+#data$relationship %>% unique()
 
 data <- data %>% 
   mutate(single = ifelse(relationship == "Single", 1, 0),
@@ -262,7 +315,7 @@ data <- data %>%
   select(-relationship)
 
 ## Convert Gender
-data$gender %>% unique()
+#data$gender %>% unique()
 
 data <- data %>% 
   mutate(female = ifelse(gender == "female", 1, 0),
@@ -272,7 +325,7 @@ data <- data %>%
   select(-gender)
 
 ## Convert Ethnicity
-data$ethnicity %>% unique()
+#data$ethnicity %>% unique()
 
 data <- data %>% 
   mutate(hispanicLatino = ifelse(ethnicity == "hispanic/latino", 1, 0),
@@ -287,7 +340,7 @@ data <- data %>%
   select(-ethnicity)
 
 ## Convert Mother/Father education
-data$feduc %>% levels()
+#data$feduc %>% levels()
 
 levels(data$meduc) <- c(3, 4, 1, 2)
 levels(data$feduc) <- c(3, 4, 1, 2)
@@ -307,7 +360,7 @@ data <- data %>%
   mutate(socioeco = socioeco_to_num[socioeco])
 
 ## Convert Sexualorient
-data$sexualorient %>% levels()
+#data$sexualorient %>% levels()
 
 data <- data %>%
   mutate(asexual = ifelse(sexualorient == "Asexual", 1, 0),
@@ -319,7 +372,7 @@ data <- data %>%
   select(-sexualorient)
 
 ## Convert Religion
-data$religion %>% levels()
+#data$religion %>% levels()
 
 data <- data %>% 
   mutate(christian = ifelse(religion == "Christian", 1, 0),
@@ -330,7 +383,7 @@ data <- data %>%
   select(-religion)
 
 ## Convert Political View
-data$politicalview %>% levels()
+#data$politicalview %>% levels()
 
 data <- data %>% 
   mutate(conservative = ifelse(politicalview == "Conservative", 1, 0),
@@ -341,8 +394,8 @@ data <- data %>%
   select(-politicalview)
 
 ## Convert UCLA Climate / Class Climate
-data$uclaclimate %>% levels()
-data$classclimate %>% levels()
+#data$uclaclimate %>% levels()
+#data$classclimate %>% levels()
 
 climate_to_num <- c("Very uncomfortable" = 1,
                     "Uncomfortable" = 2,
@@ -356,7 +409,7 @@ data <- data %>%
          classclimate = climate_to_num[classclimate])
 
 ## Convert Feelexclusion
-data$feelexclusion %>% levels()
+#data$feelexclusion %>% levels()
 
 feelexclusion_to_num <- c("No" = 1,
                           "Yes, and it interfered with my ability to work or learn" = 3,
@@ -368,9 +421,15 @@ data <- data %>%
 table(sapply(data, class)) #All variables now integer or numeric
 ```
 
+```{r}
+library(GGally)
+ggpairs(selected_data, progress = F) + theme_bw() + theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+```
+
+
 \pagebreak
 
-## 5. Feature Selection  
+## 5. Variable Selection  
 
 #### Significant Features  
 
@@ -380,7 +439,6 @@ The significant factors from our all-variables linear model were:
   - stats101b
   - stats13M
   - year
-  - SFS
   - queer
   - socioeco
   - otherReligion
@@ -402,39 +460,52 @@ The significant factors from our all-variables linear model were:
   - appearanceresp
   - socioresp
   - academicresp
+  
+```{r}
+significant_factors <- c("gpa", "stats101b", "stats13M", "year", "queer", "socioeco", "otherReligion", "nonreligious", "liberal", "uclaclimate", "classclimate", "leavingucla", "feelexclusion", "intimidated", "staringatyou", "feared", "crimevictim", "exclureligion", "facultydiver", "facunderstand", "facrespect", "religionresp", "sexualresp", "appearanceresp", "socioresp", "academicresp")
 
-#### Lasso Regression  
+significant_features_data <- data %>% 
+  select(any_of(significant_factors))
 
-In this section, we'll be using Lasso Regression to select important features from our data. This method is similar to weighted least squares, except instead of assigning weights to minimize RSS ($\sum (y_i - \hat{y_i})^2$), Lasso seeks to minimize $RSS + \lambda \sum_{j=1}^p | \beta_j |$ where $\lambda \in (0, 1)$.
+pairs(significant_features_data[, c(1:5)])
+pairs(significant_features_data[, c(1, 6:10)])
+pairs(significant_features_data[, c(1, 11:15)])
+pairs(significant_features_data[, c(1, 16:20)])
+pairs(significant_features_data[, c(1, 21:26)])
 
-```{r, warning=FALSE}
-library(glmnet)
+```
+  
 
-#train_data %>% head()
-x_train <- model.matrix(gpa~., train_data)
-x_train <- cbind("(Intercept)" = x_train[, 1], scale(x_train[, -1]))
-y_train <- train_data$gpa
+#### Stepwise Variable Selection
 
-cv_lasso <- cv.glmnet(x = x_train, y = y_train, alpha=1)
-coef(cv_lasso)
+```{r}
+library(leaps)
+X <- model.matrix(gpa~., data)
+
+forward <- regsubsets(X, data$gpa, method="forward", really.big=TRUE)
+which.max(summary(forward)$adjr2)
+which.min(summary(forward)$cp)
+which.min(summary(forward)$bic)
+summary(forward)$outmat
+#Best are year, feduc, leavingucla, staringatyou, excluenglish, appearanceresp, academicresp, stats13M,  hispanicLatino
+
+backward <- regsubsets(X, data$gpa, method="backward", really.big=TRUE)
+which.max(summary(backward)$adjr2)
+which.min(summary(backward)$cp)
+which.min(summary(backward)$bic)
+summary(backward)$outmat
+#Best are year, feduc, leavingucla, staringatyou, excluenglish, facunderstand, appearanceresp, academicresp, hispanicLatino
 ```
 
-Here, we see that the most influential variables are year, financialaid, meduc, feduc, staringatyou, academicresp, and hispanicLatino.   
-
-#### Stepwise Regression ? (might do later)
+Based on forward and backward stepwise selection, the best variables were year, feduc, leavingucla, staringatyou, excluenglish, appearanceresp, academicresp, hispanicLatino. Stats13M was significant from forward selection, and facunderstand from backward selection. 
 
 \pagebreak
 
 ## 6. Improved Models
 
-#### Significant Features Model  
+#### Significant Variables Based Model  
 
 ```{r}
-significant_factors <- c("gpa", "stats101b", "stats13M", "year", "SFS", "queer", "socioeco", "otherReligion", "nonreligious", "liberal", "uclaclimate", "classclimate", "leavingucla", "feelexclusion", "intimidated", "staringatyou", "feared", "crimevictim", "exclureligion", "facultydiver", "facunderstand", "facrespect", "religionresp", "sexualresp", "appearanceresp", "socioresp", "academicresp")
-
-significant_features_data <- data %>% 
-  select(any_of(significant_factors))
-
 significant_train <- significant_features_data[train_i, ]
 significant_test <- significant_features_data[-train_i, ]
 
@@ -442,42 +513,76 @@ significant_lm <- lm(gpa~., significant_train)
 
 summary(significant_lm)
 
+# Plot
+par(mfrow=c(2, 2))
+plot(significant_lm)
+
 yhat_significant <- predict(significant_lm, significant_test)
 
 significant_MSE <- mean((yhat_significant - significant_test$gpa)^2)
 significant_MSE
+
+#ANOVA
+anova(significant_lm)
+
+#variance inflation factor
+vif(significant_lm)
+
+# Load the corrplot package
+library(corrplot)
+
+# Compute the correlation matrix of your data
+cor_matrix <- cor(significant_features_data)
+
+# Create a correlation matrix plot
+corrplot(cor_matrix, method="circle", type="upper", order="hclust", addCoef.col="black", tl.cex = 0.3, number.cex = 0.3, tl.col="black")
 ```
 
-#### Lasso Regression Chosen Model
+
+#### Stepwise Selection Based Model
 
 ```{r}
+## Describing Filtered Data
+library(GGally)
 filtered_data <- data %>% 
-  select(gpa, year, financialaid, meduc, feduc, staringatyou, academicresp, hispanicLatino)
+  select(gpa, year, feduc, leavingucla, staringatyou, excluenglish, appearanceresp, academicresp, stats13M,  hispanicLatino, facunderstand)
 
+pairs(filtered_data[, 1:6])
+pairs(filtered_data[, c(1, 7:11)])
+
+ggpairs(filtered_data[, 1:6])
+ggpairs(filtered_data[, c(1, 7:11)])
+
+## Building the model
 filtered_train <- filtered_data[train_i, ]
 filtered_test <- filtered_data[-train_i, ]
 
-x_train <- filtered_train %>% select(-gpa) %>% scale()
-y_train <- filtered_train$gpa
+filtered_lm <- lm(gpa~., filtered_train)
 
-unscaled_lm <- lm(gpa~., filtered_train)
-scaled_lm <- lm(gpa~., data.frame("gpa" = y_train, x_train))
+summary(filtered_lm)
 
-summary(unscaled_lm)
-summary(scaled_lm)
+par(mfrow=c(2,2))
+plot(filtered_lm)
 
-yhat_unscaled <- predict(unscaled_lm, newdata=filtered_test %>% select(-gpa))
+yhat_filtered <- predict(filtered_lm, newdata=filtered_test %>% select(-gpa))
 
-unscaled_MSE <- mean((yhat_unscaled - filtered_test$gpa)^2)
-unscaled_MSE
+filtered_MSE <- mean((yhat_filtered - filtered_test$gpa)^2)
+filtered_MSE
 
-x_test <- filtered_test %>% select(-gpa) %>% scale()
-y_test <- filtered_test$gpa
+plot(yhat_filtered, filtered_test$gpa)
 
-yhat_scaled <- predict(scaled_lm, newdata=data.frame("gpa" = y_test, x_test))
+#ANOVA
+anova(filtered_lm)
 
-scaled_MSE <- mean((yhat_scaled - filtered_test$gpa)^2)
-scaled_MSE
+#variance inflation factor
+vif(filtered_lm)
+
+# Compute the correlation matrix of your data
+cor_matrix <- cor(filtered_data)
+
+# Create a correlation matrix plot
+corrplot(cor_matrix, method="circle", type="upper", order="hclust", addCoef.col="black", tl.cex = 0.6, number.cex = 0.5, tl.col="black")
+
 ```
 
 In this case, scaling the data did not improve the performance of the model. However, the resulting MSE for the unscaled model is lower than our previous best MSE from the all-variables linear model! That being said, the Adjusted R-squared is lower than the all-variables model. 
@@ -486,5 +591,40 @@ In this case, scaling the data did not improve the performance of the model. How
 
 ## 7. Applying Transformations
 
-## 8+ Anything else we might do
+```{r}
+library(car)
+transx <- powerTransform(cbind(gpa, year, feduc, leavingucla, staringatyou, excluenglish, appearanceresp, academicresp, stats13M,  hispanicLatino, facunderstand)~1, filtered_data, family="bcnPower")
+
+summary(transx)
+
+transy <- inverseResponsePlot(filtered_lm)
+
+summary(transy)
+```
+
+```{r}
+filtered_train <- filtered_train + 1e-6
+transformed_lm <- lm(I(gpa^2)~I(year^0.5)
+                     +I(feduc^3)
+                     +I(leavingucla^-1.257)
+                     +I(staringatyou^-0.5)
+                     +I(excluenglish^-1.44)
+                     +I(appearanceresp^3)
+                     +I(academicresp^3)
+                     +I(stats13M^-3)
+                     +I(hispanicLatino^-1.71)
+                     +I(facunderstand^0.5), 
+                     filtered_train)
+
+
+summary(transformed_lm)
+
+par(mfrow=c(2,2))
+plot(transformed_lm)
+```
+
+```{r}
+inverseResponsePlot(filtered_lm)
+```
+
 
