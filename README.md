@@ -21,6 +21,8 @@ Figure 1. Visualization of missing values in original dataset.
 
   Our original dataset contained 75 predictor variables and one response variable (GPA) with over 900 observations. On initial inspection, we found that seven of those predictors contained a high proportion of missing values (<20%) with over 200 missing values (Figure 1). Because of their high NA count, we deemed it unreasonable to impute those missing values and removed those seven predictors, leaving 68 predictor variables. Of those, 49 were numerical while the remaining 19 were categorical, with the numerical predictors ranging either from [0,1] or [1,5]. The response variable GPA had a range of [0.0, 4.0], but the majority of students had GPAs either around 3.0 or 4.0 (Figure 2). Due to the high dimensionality of the data and discrete nature of every variable besides GPA, analyzing their distributions, correlations, and summary statistics were difficult and impractical as the majority of those variables would not be in our final model (Figure 3). Instead, we focused our analysis on the three predictors we suspected to have the greatest impact on GPA.  
   
+<br/>
+  
 <img src="https://user-images.githubusercontent.com/114524578/228988970-775a19a5-3da7-429d-9d27-22045412e210.png" width=600 height=350 />   
 Figure 2. Distribution of GPA.  
 
@@ -41,6 +43,8 @@ Figure 4. Analysis of gender and its effect on GPA.
 <br/>
 
   In Figure 4, we saw that while the median GPAs for female, male, and queer identifying students were relatively similar, we found that transgender students had a much higher median GPA than the other students. That being said, there weren’t that many transgender students in our data, so its value as a predictor might not be strong. We also found that while male and female students had overlapping distributions, queer students showed greater proportions of lower GPA students, while transgender students tended to stay in the middle of 3.0 and 4.0 GPAs.  
+  
+<br/>
 
 <img src="https://user-images.githubusercontent.com/114524578/229263318-9c3ef445-054d-4b93-b5ce-798a4e4a08b8.jpg" width=500 height=300 />  
 
@@ -49,6 +53,8 @@ Figure 5. Analysis of relationship status and its effect on GPA.
 <br/>
 
   In Figure 5, we saw that there was a slight increase in GPA among students that were single, with similar performances by married students and students in relationships. While single and students in relationships showed similar bimodal distributions, married students showed a more normal distribution. In this context, it meant that while a lot of married students have a GPAs around 3.0, there wasn’t a peak around 4.0, indicating that there was a dropoff of married students striving for perfect GPAs than non-married students.  
+  
+<br/>
   
 <img src="https://user-images.githubusercontent.com/114524578/229263349-f7893653-e5fa-44c7-b4a4-4beeaca4989b.jpg" width=500 height=300 />  
 
@@ -77,6 +83,8 @@ Table 1. Model Summary Statistics
 
   Before processing the data, we came up with two preliminary models to serve as baselines for any improved models we might consider later on. We first built a MLR model using the three variables we intuited would have an effect on GPA previously (gender, relationship status, and ethnicity). The model statistics are shown in Table 1, and they are consistent with the preliminary analyses from Figures 4-6 as the overlaps in variables implies that these variables are not the strongest predictors for GPA. The low adjusted R2 value shows that this model is very weak, and while there aren’t any bad leverage points, we can see from the Normal Q-Q plot that the distribution of error terms is not completely normal. We can also see that the residuals are not randomly distributed around zero in the residual plot due to some outliers with high GPA’s (Figure 7). So, the model assumptions are violated with this model.  
   
+<br/>
+  
 <img src="https://user-images.githubusercontent.com/114524578/229264167-62e66f37-5a3f-492a-a740-f780751f11b6.png" width=500 height=300 />  
 
 Figure 7. Diagnostic plots for the suspected variables model.  
@@ -84,6 +92,8 @@ Figure 7. Diagnostic plots for the suspected variables model.
 <br/>
 
   Next, we created a MLR model using all of the 68 initial predictors without preprocessing. The results are shown in Appendix Table 1, and, unsurprisingly, we see a stronger correlation with an adjusted R2 value of 0.3612. Although this is still less than 0.5, this value is reasonable for a social dataset, and once again we see that the p-value for the F-statistic is low, indicating that there is significant evidence to support that at least one of the variables significantly affects GPA. Although this model is stronger than the previous one, it suffers from similar assumption violations as the previous model. Particularly, there are discernible patterns in the residual plot and scale-location plot. However, the Normal Q-Q plot shows an improvement in the normality of error terms (Figure 8).  
+  
+<br/>
 
 <img src="https://user-images.githubusercontent.com/114524578/229264250-a2fe49fd-5615-4fe9-9ada-f028a3bed2a4.png" width=500 height=300 />  
 
@@ -93,6 +103,8 @@ Figure 8. Diagnostic plots for the all variables model.
 
   After processing the data, we created two improved models using differing feature selection approaches. The first approach consisted of identifying the significant variables from our all-variables model and basing our model off of that. The diagnostic plots of this model (Figure 9) follow closely to the plots of the all-variables model (Figure 8), but the strength of the model significantly drops from an adjusted R2 value of 0.3612 to 0.2376 (Table 1). While this is still better than our first model with three variables, the significant drop in adjusted R2 value indicates that there is a lot of room for improvement, which makes sense because simply choosing the most significant features from the all-variables model is a naive approach. This is because the significance of each variable depends on the presence of other variables, so a better approach would be to test each variable individually.  
   
+<br/>
+  
 <img src="https://user-images.githubusercontent.com/114524578/229264305-2cd4c794-9a25-4864-b49a-3665d01b851d.png" width=500 height=300 />  
 
 Figure 9. Diagnostic plots for significant variables model.  
@@ -101,6 +113,8 @@ Figure 9. Diagnostic plots for significant variables model.
 
   The next model used variables selected from both forward and backward stepwise regression. We used these two methods because they are more efficient than an exhaustive search, which is good for our large dataset. Additionally, since they operate in different directions, we lessen the bias the initial order of predictors has on the selection algorithms’ results. The vast majority of metrics we tested (Adjusted R2, Mallow’s Cp, and BIC) concluded that a subset of nine predictors was optimal, and both forward and backward selection agreed on the variables: year, feduc, leavingucla, staringatyou, excluenglish, appearanceresp, academicresp, hispanicLatino. The variable Stats13M was significant in the forward pass, and facunderstand was significant in the backward pass, so we selected both for our model leaving us with 10 predictors. The statistics are in Table 1, and while the adjusted R2 is less than the all-variables model, the lower mean squared error (MSE) indicates that this model performed better on a test set (on an 80-20 train-test split). This implies that this model is less biased than our all-variables model, but the diagnostic plots show the same underlying assumption violations as before (Figure 10). That being said, checking for multicollinearity, we found that none of the variance inflation factors (VIF) are above five. This indicates that none of the predictors for this model are dependent on each other, which is likely an issue with the all-variables model. Because of this, we chose this model as our primary model.   
 
+<br/>
+
 <img src="https://user-images.githubusercontent.com/114524578/229264437-a2c8eba3-aa57-44fe-8f60-95d31a6577c2.png" width=500 height=300 />  
 
 Figure 10. Diagnostic plots for stepwise selected variables model.  
@@ -108,6 +122,8 @@ Figure 10. Diagnostic plots for stepwise selected variables model.
 <br/>
 
   In order to improve our model, we considered implementing variable transformations and interactions between variables. For the former, we utilized the Box-Cox method for transforming both the predictors and the response (Table 1). This resulted in transformations for every variable in our chosen model, and while the resulting adjusted R2 was not too different from the untransformed model, the MSE was drastically higher than all of the models we’d created so far (Table 1). Because of this high level of bias, we discarded this change. As for implementing interaction terms, we created a model that considered the interactions between all of the predictors. This resulted in the highest adjusted R2 yet, however, it also resulted in the highest MSE yet. Similarly to the transformed model, this model suffers from high (if not extreme) bias. Therefore, we discarded this change as well.  
+  
+<br/>
 
 <img src="https://user-images.githubusercontent.com/114524578/229264471-b52b5af3-86ae-4a82-97e8-b85aeea4f788.png" width=500 height=300 /> 
 
