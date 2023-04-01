@@ -36,7 +36,7 @@ Figure 3. Scatterplot matrices of stepwise selected variables. With over 50 vari
 
 <br/>
 
-<img src="https://user-images.githubusercontent.com/114524578/229263274-3346e9ca-97ba-4d34-93d1-8c6e5adb5bdb.jpg" width=500 height=300 />  
+<img src="https://user-images.githubusercontent.com/114524578/229263274-3346e9ca-97ba-4d34-93d1-8c6e5adb5bdb.jpg" width=700 height=300 />  
 
 Figure 4. Analysis of gender and its effect on GPA.  
 
@@ -46,7 +46,7 @@ Figure 4. Analysis of gender and its effect on GPA.
   
 <br/>
 
-<img src="https://user-images.githubusercontent.com/114524578/229263318-9c3ef445-054d-4b93-b5ce-798a4e4a08b8.jpg" width=500 height=300 />  
+<img src="https://user-images.githubusercontent.com/114524578/229263318-9c3ef445-054d-4b93-b5ce-798a4e4a08b8.jpg" width=700 height=300 />  
 
 Figure 5. Analysis of relationship status and its effect on GPA.  
 
@@ -56,7 +56,7 @@ Figure 5. Analysis of relationship status and its effect on GPA.
   
 <br/>
   
-<img src="https://user-images.githubusercontent.com/114524578/229263349-f7893653-e5fa-44c7-b4a4-4beeaca4989b.jpg" width=500 height=300 />  
+<img src="https://user-images.githubusercontent.com/114524578/229263349-f7893653-e5fa-44c7-b4a4-4beeaca4989b.jpg" width=700 height=300 />  
 
 Figure 6. Analysis of ethnicity and its effect on GPA. 
 
